@@ -2,3 +2,4 @@
 
 .env
 out
+http-test.http
