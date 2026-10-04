@@ -12,7 +12,7 @@ env-cleanup:
 	@read -p "This will remove all data in the DB. Are you sure? (y/N) " ans; \
 		if [ "$$ans" = "y" ]; then \
 			docker compose down todoapp-postgres port-forwarder && \
-			sudo rm -rf out/_pgdata; \
+			sudo rm -rf ${PROJECT_ROOT}/out/_pgdata; \
 				echo "Environment cleaned up."; \
 		else \
 			echo "Aborting..."; \
@@ -57,4 +57,4 @@ todoapp-run:
 	@export LOGGER_FOLDER=${PROJECT_ROOT}/out/log && \
 	export POSTGRES_HOST=localhost && \
 	go mod tidy && \
-	go run cmd/todoapp/main.go
+	go run ${PROJECT_ROOT}/cmd/todoapp/main.go

@@ -8,7 +8,7 @@ import (
 	"syscall"
 
 	core_logger "github.com/D1skord/todo/internal/core/logger"
-	core_postgres_pool "github.com/D1skord/todo/internal/core/repository/postgres/pool"
+	core_pgx_pool "github.com/D1skord/todo/internal/core/repository/postgres/pool/pgx"
 	core_http_middleware "github.com/D1skord/todo/internal/core/transport/http/middleware"
 	core_http_server "github.com/D1skord/todo/internal/core/transport/http/server"
 	users_postgres_repository "github.com/D1skord/todo/internal/features/users/repository/postgres"
@@ -35,9 +35,10 @@ func main() {
 	logger.Debug("Starting ToDo application...")
 
 	logger.Debug("initialize connection pool")
-	pool, err := core_postgres_pool.NewConnectionPool(
+
+	pool, err := core_pgx_pool.NewPool(
 		ctx,
-		core_postgres_pool.NewConfigMust(),
+		core_pgx_pool.NewConfigMust(),
 	)
 
 	if err != nil {
@@ -57,13 +58,27 @@ func main() {
 		logger,
 		core_http_middleware.RequestId(),
 		core_http_middleware.Logger(logger),
-		core_http_middleware.Panic(),
 		core_http_middleware.Trace(logger),
+		core_http_middleware.Panic(),
 	)
 
-	apiVersionRouter := core_http_server.NewAPIVersionRouter(core_http_server.APIVersion1)
-	apiVersionRouter.RegisterRoutes(usersTransportHTTP.Routes()...)
-	httpServer.RegisterAPIRouters(apiVersionRouter)
+	apiVersionRouterV1 := core_http_server.NewAPIVersionRouter(core_http_server.APIVersion1)
+	apiVersionRouterV1.RegisterRoutes(usersTransportHTTP.Routes()...)
+
+	/*
+		Example of usage apiVersionRouterV2 with separate MiddleWares
+		//apiVersionRouterV2 := core_http_server.NewAPIVersionRouter(
+		//	core_http_server.APIVersion2,
+		//	core_http_middleware.Dummy("api v2 middleware"),
+		//)
+		//apiVersionRouterV2.RegisterRoutes(usersTransportHTTP.Routes()...)
+
+		*
+	*/
+	httpServer.RegisterAPIRouters(
+		apiVersionRouterV1,
+		//apiVersionRouterV2,
+	)
 
 	if err := httpServer.Run(ctx); err != nil {
 		logger.Error("HTTP server run error", zap.Error(err))

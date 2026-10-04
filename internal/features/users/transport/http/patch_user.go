@@ -10,7 +10,6 @@ import (
 	core_http_request "github.com/D1skord/todo/internal/core/transport/http/request"
 	core_http_response "github.com/D1skord/todo/internal/core/transport/http/response"
 	core_http_types "github.com/D1skord/todo/internal/core/transport/http/types"
-	core_http_utils "github.com/D1skord/todo/internal/core/transport/http/utils"
 )
 
 type PatchUserResponse UserDtoResponse
@@ -53,7 +52,7 @@ func (h *UsersHTTPHandler) PatchUser(w http.ResponseWriter, r *http.Request) {
 	responseHandler := core_http_response.NewHTTPResponseHandler(log, w)
 
 	//Нашли какого пользователя нужно менять
-	userId, err := core_http_utils.GetIntPathValue(r, "id")
+	userId, err := core_http_request.GetIntPathValue(r, "id")
 	if err != nil {
 		responseHandler.ErrorResponse(
 			err,
@@ -90,8 +89,8 @@ func (h *UsersHTTPHandler) PatchUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func userPatchFromRequest(r PatchUserRequest) domain.UserPatch {
-	return domain.UserPatch{
-		FullName:    r.FullName.ToDomain(),
-		PhoneNumber: r.PhoneNumber.ToDomain(),
-	}
+	return domain.NewUserPatch(
+		r.FullName.ToDomain(),
+		r.PhoneNumber.ToDomain(),
+	)
 }
