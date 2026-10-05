@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/D1skord/todo/internal/core/domain"
-	users_postgres_repository "github.com/D1skord/todo/internal/features/users/repository/postgres"
 )
 
 type UsersService struct {
@@ -36,7 +35,7 @@ type UsersRepository interface {
 	) (domain.User, error)
 }
 
-func NewUserService(usersRepository *users_postgres_repository.UsersRepository) *UsersService {
+func NewUserService(usersRepository UsersRepository) *UsersService {
 	return &UsersService{
 		usersRepository: usersRepository,
 	}
