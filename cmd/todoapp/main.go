@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	core_config "github.com/D1skord/todo/internal/core/config"
 	core_logger "github.com/D1skord/todo/internal/core/logger"
 	core_pgx_pool "github.com/D1skord/todo/internal/core/repository/postgres/pool/pgx"
 	core_http_middleware "github.com/D1skord/todo/internal/core/transport/http/middleware"
@@ -21,12 +22,9 @@ import (
 	"go.uber.org/zap"
 )
 
-var (
-	timeZone = time.UTC
-)
-
 func main() {
-	time.Local = timeZone
+	cfg := core_config.NewConfigMust()
+	time.Local = cfg.TimeZone
 
 	ctx, cancel := signal.NotifyContext(
 		context.Background(),
@@ -42,7 +40,7 @@ func main() {
 	}
 	defer logger.Close()
 
-	logger.Debug("application time zone", zap.Any("time_zone", timeZone))
+	logger.Debug("application time zone", zap.Any("time_zone", time.Local))
 
 	logger.Debug("Starting ToDo application...")
 
