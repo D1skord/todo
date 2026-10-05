@@ -6,7 +6,6 @@ import (
 
 	"github.com/D1skord/todo/internal/core/domain"
 	core_http_server "github.com/D1skord/todo/internal/core/transport/http/server"
-	users_service "github.com/D1skord/todo/internal/features/users/service"
 )
 
 type UsersHTTPHandler struct {
@@ -21,7 +20,7 @@ type UserService interface {
 	PatchUser(ctx context.Context, id int, patch domain.UserPatch) (domain.User, error)
 }
 
-func NewUsersHTTPHandler(userService *users_service.UsersService) *UsersHTTPHandler {
+func NewUsersHTTPHandler(userService UserService) *UsersHTTPHandler {
 	return &UsersHTTPHandler{
 		userService: userService,
 	}
