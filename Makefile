@@ -67,3 +67,26 @@ logs-cleanup:
 	else \
 		echo "Очистка логов отменена"; \
 	fi
+
+todoapp-deploy:
+	@docker compose up -d --build todoapp
+
+todoapp-undeploy:
+	@docker compose down todoapp
+
+
+# Запускаем генерацию swagger-документации
+# указываем точное расположение файла main.go
+# указываем директорию для сгенерированных файлов
+# разрешаем утилите анализировать пакеты из директории internal
+# разрешаем утилите анализировать типы из зависимостей
+swagger-gen:
+	@docker compose run --rm swagger \
+		init \
+		-g cmd/todoapp/main.go \
+		-o docs \
+		--parseInternal \
+		--parseDependency
+
+ps:
+	@docker compose ps
