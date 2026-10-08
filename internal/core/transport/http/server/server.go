@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/D1skord/todo/docs"
 	core_logger "github.com/D1skord/todo/internal/core/logger"
 	core_http_middleware "github.com/D1skord/todo/internal/core/transport/http/middleware"
+	httpSwagger "github.com/swaggo/http-swagger/v2"
 	"go.uber.org/zap"
 )
 
@@ -40,6 +42,33 @@ func (s *HTTPServer) RegisterAPIRouters(routers ...*APIVersionRouter) {
 			http.StripPrefix(prefix, router.WithMiddleware()),
 		)
 	}
+}
+
+func (s *HTTPServer) RegisterSwagger() {
+	/*
+		При обращении на url: /swagger/ отдается страница SwaggerUI,
+		которая делает отдельный запрос на /swagger/doc.json
+
+		Ниже описываем сам хандлер для /swagger/doc.json:
+		устанавливаем заголовок, статус код и в теле ответа
+		вызываем сгенерированную функцию ReadDoc из пакета docs
+	*/
+	s.mux.Handle(
+		"/swagger/",
+		httpSwagger.Handler(
+			httpSwagger.URL("/swagger/doc.json"),
+			httpSwagger.DefaultModelsExpandDepth(-1),
+		),
+	)
+
+	s.mux.HandleFunc(
+		"/swagger/doc.json",
+		func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(docs.SwaggerInfo.ReadDoc()))
+		},
+	)
 }
 
 func (s *HTTPServer) Run(ctx context.Context) error {
