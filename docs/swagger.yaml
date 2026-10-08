@@ -122,6 +122,60 @@ definitions:
         example: 1
         type: integer
     type: object
+  internal_features_users_transport_http.GetUserResponse:
+    properties:
+      full_name:
+        example: Ivan Ivanov
+        type: string
+      id:
+        example: 1
+        type: integer
+      phone_number:
+        example: "+79885556677"
+        type: string
+      version:
+        example: 1
+        type: integer
+    type: object
+  internal_features_users_transport_http.PatchUserRequest:
+    properties:
+      full_name:
+        example: Ivan Ivanov
+        type: string
+      phone_number:
+        example: "+79010050695"
+        type: string
+    type: object
+  internal_features_users_transport_http.PatchUserResponse:
+    properties:
+      full_name:
+        example: Ivan Ivanov
+        type: string
+      id:
+        example: 1
+        type: integer
+      phone_number:
+        example: "+79885556677"
+        type: string
+      version:
+        example: 1
+        type: integer
+    type: object
+  internal_features_users_transport_http.UserDtoResponse:
+    properties:
+      full_name:
+        example: Ivan Ivanov
+        type: string
+      id:
+        example: 1
+        type: integer
+      phone_number:
+        example: "+79885556677"
+        type: string
+      version:
+        example: 1
+        type: integer
+    type: object
 host: 127.0.0.1:5050
 info:
   contact: {}
@@ -309,6 +363,37 @@ paths:
       tags:
       - tasks
   /users:
+    get:
+      description: Просмотр списка пользователей с опциональной пагинацией
+      parameters:
+      - description: Размер страницы с пользователями
+        in: query
+        name: limit
+        type: integer
+      - description: Смещение страницы с пользователями
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешное получение списка пользователей
+          schema:
+            items:
+              $ref: '#/definitions/internal_features_users_transport_http.UserDtoResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_D1skord_todo_internal_core_transport_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_D1skord_todo_internal_core_transport_http_response.ErrorResponse'
+      summary: Список пользователей
+      tags:
+      - users
     post:
       consumes:
       - application/json
@@ -336,6 +421,107 @@ paths:
           schema:
             $ref: '#/definitions/github_com_D1skord_todo_internal_core_transport_http_response.ErrorResponse'
       summary: Создать пользователя
+      tags:
+      - users
+  /users/{id}:
+    delete:
+      description: Удалить существующего в системе пользователя по его ID
+      parameters:
+      - description: ID удаляемого пользователя
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: Успешное удаление пользователя
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_D1skord_todo_internal_core_transport_http_response.ErrorResponse'
+        "404":
+          description: User Not Found
+          schema:
+            $ref: '#/definitions/github_com_D1skord_todo_internal_core_transport_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_D1skord_todo_internal_core_transport_http_response.ErrorResponse'
+      summary: Удалить пользователя
+      tags:
+      - users
+    get:
+      description: Получение существующего в системе пользователя по его ID
+      parameters:
+      - description: ID получаемого пользователя
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Пользователь успешно найден
+          schema:
+            $ref: '#/definitions/internal_features_users_transport_http.GetUserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_D1skord_todo_internal_core_transport_http_response.ErrorResponse'
+        "404":
+          description: User Not Found
+          schema:
+            $ref: '#/definitions/github_com_D1skord_todo_internal_core_transport_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_D1skord_todo_internal_core_transport_http_response.ErrorResponse'
+      summary: Получение пользователя
+      tags:
+      - users
+    patch:
+      consumes:
+      - application/json
+      description: |-
+        Изменение информации об уже существующем в системе пользователе
+        ### Логика обновления полей (Three-stage logic):
+        1. **Поле не передано**: `phone_number` игнорируется, значение в БД не меняется
+        2. **Явно передано значение**: `"phone_number": "+79010050695" - устанавливает новый номер телефона в БД`
+        3. **Передан null**: `"phone_number": null` - очищает поле в БД (set to NULL)
+        Ограничения: `full_name` не может быть выставлен как null
+      parameters:
+      - description: ID изменяемого пользователя
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: PatchUser тело запроса
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_features_users_transport_http.PatchUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Информация о пользователе успешно изменена
+          schema:
+            $ref: '#/definitions/internal_features_users_transport_http.PatchUserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_D1skord_todo_internal_core_transport_http_response.ErrorResponse'
+        "404":
+          description: User Not Found
+          schema:
+            $ref: '#/definitions/github_com_D1skord_todo_internal_core_transport_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_D1skord_todo_internal_core_transport_http_response.ErrorResponse'
+      summary: Изменение пользователя
       tags:
       - users
 swagger: "2.0"
