@@ -44,6 +44,15 @@ func (s *HTTPServer) RegisterAPIRouters(routers ...*APIVersionRouter) {
 	}
 }
 
+func (s *HTTPServer) RegisterRouters(routers ...Route) {
+	for _, route := range routers {
+		// "GET /tasks"
+		pattern := fmt.Sprintf("%s %s", route.Method, route.Path)
+
+		s.mux.Handle(pattern, route.WithMiddleware())
+	}
+}
+
 func (s *HTTPServer) RegisterSwagger() {
 	/*
 		При обращении на url: /swagger/ отдается страница SwaggerUI,
