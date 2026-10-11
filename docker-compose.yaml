@@ -15,11 +15,16 @@ services:
       - POSTGRES_TIMEOUT=${POSTGRES_TIMEOUT}
       - TIME_ZONE=${TIME_ZONE}
       - LOGGER_FOLDER=/app/out/logs
+      - REDIS_HOST=todoapp-redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_TTL=${REDIS_TTL}
+      - REDIS_TIMEOUT=${REDIS_TIMEOUT}
     volumes:
       - ${PROJECT_ROOT}/out/logs:/app/out/logs
     #добавить healthcheck для postgres зависимости
     depends_on:
       - todoapp-postgres
+      - todoapp-redis
     ports:
       - "5050:5050"
     restart: always
@@ -58,6 +63,21 @@ services:
         ENTRYPOINT ["swag"]
     volumes:
       - ${PROJECT_ROOT}:/code
+
+  todoapp-redis:
+    image: redis:8.6.7
+    container_name: todoapp-env-redis
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - ${PROJECT_ROOT}/out/redis_data:/data
+    restart: always
+
+  redis-port-forwarder:
+    image: alpine/socat:1.8.0.3
+    container_name: todoapp-redis-port-forwarder
+    command: tcp-listen:6379,fork,reuseaddr tcp-connect:todoapp-redis:6379
+    ports:
+      - "127.0.0.1:6379:6379"
 
 volumes:
   pgdata:

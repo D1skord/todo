@@ -4,9 +4,9 @@ export
 export PROJECT_ROOT=$(shell pwd)
 
 env-up:
-	docker compose up -d todoapp-postgres
+	docker compose up -d todoapp-postgres todoapp-redis
 env-down:
-	@docker compose down todoapp-postgres
+	@docker compose down todoapp-postgres todoapp-redis
 
 env-cleanup:
 	@read -p "This will remove all data in the DB. Are you sure? (y/N) " ans; \
@@ -48,14 +48,15 @@ migrate-action:
 		"$(action)"
 
 env-port-forward:
-	@docker compose up -d port-forwarder
+	@docker compose up -d port-forwarder redis-port-forwarder
 
 env-port-close:
-	@docker compose down port-forwarder
+	@docker compose down port-forwarder redis-port-forwarder
 
 todoapp-run:
 	@export LOGGER_FOLDER=${PROJECT_ROOT}/out/log && \
 	export POSTGRES_HOST=localhost && \
+	export REDIS_HOST=localhost && \
 	go mod tidy && \
 	go run ${PROJECT_ROOT}/cmd/todoapp/main.go
 
@@ -67,6 +68,9 @@ logs-cleanup:
 	else \
 		echo "Очистка логов отменена"; \
 	fi
+
+redis-cli:
+	@docker exec -it todoapp-env-redis redis-cli --no-auth-warning -a $(REDIS_PASSWORD)
 
 todoapp-deploy:
 	@docker compose up -d --build todoapp
