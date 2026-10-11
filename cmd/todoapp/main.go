@@ -11,12 +11,14 @@ import (
 	core_config "github.com/D1skord/todo/internal/core/config"
 	core_logger "github.com/D1skord/todo/internal/core/logger"
 	core_pgx_pool "github.com/D1skord/todo/internal/core/repository/postgres/pool/pgx"
+	core_goredis_pool "github.com/D1skord/todo/internal/core/repository/redis/pool/goredis"
 	core_http_middleware "github.com/D1skord/todo/internal/core/transport/http/middleware"
 	core_http_server "github.com/D1skord/todo/internal/core/transport/http/server"
 	statistics_postgres_repository "github.com/D1skord/todo/internal/features/statistics/repository/postgres"
 	statistics_service "github.com/D1skord/todo/internal/features/statistics/service"
 	statistics_transport_http "github.com/D1skord/todo/internal/features/statistics/transport/http"
-	tasks_postgres_repository "github.com/D1skord/todo/internal/features/tasks/repository"
+	tasks_cached_repository "github.com/D1skord/todo/internal/features/tasks/repository/cached"
+	tasks_postgres_repository "github.com/D1skord/todo/internal/features/tasks/repository/postgres"
 	tasks_service "github.com/D1skord/todo/internal/features/tasks/service"
 	tasks_transport_http "github.com/D1skord/todo/internal/features/tasks/transport/http"
 	users_postgres_repository "github.com/D1skord/todo/internal/features/users/repository/postgres"
@@ -69,6 +71,21 @@ func main() {
 	}
 	defer pool.Close()
 
+	logger.Debug("initialize redis connection pool")
+
+	redisPool, err := core_goredis_pool.NewPool(
+		ctx,
+		core_goredis_pool.NewConfigMust(),
+	)
+	if err != nil {
+		logger.Fatal("failed to init redis connection pool", zap.Error(err))
+	}
+	defer func() {
+		if err := redisPool.Close(); err != nil {
+			logger.Error("failed to close redis connection pool", zap.Error(err))
+		}
+	}()
+
 	logger.Debug("initializing feature", zap.String("feature", "users"))
 
 	usersRepository := users_postgres_repository.NewUsersRepository(pool)
@@ -76,8 +93,10 @@ func main() {
 	usersTransportHTTP := users_transport_http.NewUsersHTTPHandler(usersService)
 
 	logger.Debug("initializing feature", zap.String("feature", "tasks"))
-	tasksRepository := tasks_postgres_repository.NewTasksRepository(pool)
-	tasksService := tasks_service.NewTasksService(tasksRepository)
+
+	tasksPostgresRepository := tasks_postgres_repository.NewTasksRepository(pool)
+	tasksCachedRepository := tasks_cached_repository.NewCachedRepository(redisPool, tasksPostgresRepository)
+	tasksService := tasks_service.NewTasksService(tasksCachedRepository)
 	tasksTransportHTTP := tasks_transport_http.NewTasksHTTPHandler(tasksService)
 
 	logger.Debug("initializing feature", zap.String("feature", "statistics"))
